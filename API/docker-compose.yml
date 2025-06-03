@@ -1,0 +1,31 @@
+services:
+    postgres:
+        container_name: agenda_saude_pg
+        image: postgres:16.3-alpine3.20
+        restart: always
+        environment:
+            POSTGRES_USER: ${POSTGRES_USER}
+            POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+            POSTGRES_DB: ${POSTGRES_DB}
+            PGDATA: /data/postgres
+        ports:
+            - '5432:5432'
+        volumes:
+            - docker-nest-postgres:/var/lib/postgresql/data
+    mongo:
+        container_name: agenda_saude_mongo
+        image: mongo:8.0-rc
+        restart: always
+        environment:
+            MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME}
+            MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD}
+            MONGO_INITDB_DATABASE: ${MONGO_INITDB_DATABASE}
+        ports:
+            - ${MONGO_PORT}:${MONGO_PORT}
+        volumes:
+            - docker-nest-mongo:/var/lib/mongo/data
+
+volumes:
+    data: {}
+    docker-nest-postgres:
+    docker-nest-mongo:

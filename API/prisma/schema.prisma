@@ -1,0 +1,181 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "debian-openssl-3.0.x"]
+  output        = "../node_modules/@prisma/postgres-client"
+}
+
+enum UploadType {
+  AVATAR
+}
+
+enum AttachmentType {
+  REQUEST_ATTACHMENT
+}
+
+enum UserRole {
+  PATIENT
+  EMPLOYEE
+  ADMIN
+}
+
+model RefreshToken {
+  id        String @id @default(uuid())
+  expiresIn Int    @map("expires_in")
+  user      User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String @unique @map("user_id")
+
+  @@map("refresh_token")
+}
+
+model User {
+  id           String        @id @default(uuid())
+  // cpf          String        @unique
+  password     String
+  role         UserRole      @default(PATIENT)
+  email        String        @unique
+  name         String?
+  avatar       String?
+  birthDate    DateTime?     @map("birth_date")
+  phoneNumber  String?       @map("phone_number")
+  createdAt    DateTime      @default(now()) @map("created_at")
+  updatedAt    DateTime      @updatedAt @map("updated_at")
+  patients     Patient[] // "Relacionamentos do prisma"
+  admins       Admin[] // "Relacionamentos do prisma"
+  employees    Employee[] // "Relacionamentos do prisma"
+  refreshToken RefreshToken?
+  resetPasswordToken  String?       // Campo para o token de recuperação
+  resetPasswordExpires DateTime?   
+  //latitude     // O admin já possui acesso ao posto do usuário
+  //longitude    // O admin já possui acesso ao posto do usuário
+  Uploads      Upload[]
+
+  @@map("users")
+}
+
+model MobileDevice {
+  id         String    @id @default(uuid())
+  patients   Patient[]
+  expoToken  String    @map("expo_token")
+  deviceType String?   @map("device_type") // android, ios
+  createdAt  DateTime  @default(now()) @map("created_at")
+  updatedAt  DateTime  @updatedAt @map("updated_at")
+
+  @@map("mobile_devices")
+}
+
+model Patient {
+  id             String         @id @default(uuid())
+  user           User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId         String         @map("user_id")
+  susNumber      String         @unique @map("sus_number")
+  requests       Request[]
+  serviceTokens  ServiceToken[]
+  mobileDevice   MobileDevice?  @relation(fields: [mobileDeviceId], references: [id], onDelete: Cascade)
+  mobileDeviceId String?        @map("mobile_device_id")
+
+  @@map("patients")
+}
+
+model Admin {
+  id     String @id @default(uuid())
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId String @map("user_id")
+
+  @@map("admins")
+}
+
+model Employee {
+  id     Int    @id @default(autoincrement())
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId String @map("user_id")
+
+  @@map("employees")
+}
+
+enum ServiceStatus {
+  CANCELLED
+  COMPLETED
+  EXPIRED
+  PENDING
+}
+
+model ServiceToken {
+  id             String        @id @default(uuid())
+  patient        Patient       @relation(fields: [patientId], references: [id])
+  patientId      String        @map("patient_id")
+  status         ServiceStatus @default(PENDING)
+  createdAt      DateTime      @default(now()) @map("created_at")
+  updatedAt      DateTime      @updatedAt @map("updated_at")
+  expirationDate DateTime      @map("expiration_date")
+  requests       Request[]
+
+  @@map("service_tokens")
+}
+
+enum RequestStatus {
+  COMPLETED
+  EXPIRED
+  PENDING
+  DENIED
+  ACCEPTED
+  CONFIRMED
+  CANCELLED
+}
+
+model Request {
+  id             String        @id @default(uuid())
+  patient        Patient       @relation(fields: [patientId], references: [id])
+  patientId      String        @map("patient_id")
+  serviceToken   ServiceToken  @relation(fields: [serviceTokenId], references: [id])
+  serviceTokenId String        @map("service_token_id")
+  status         RequestStatus @default(PENDING)
+  createdAt      DateTime      @default(now()) @map("created_at")
+  updatedAt      DateTime      @updatedAt @map("updated_at")
+  attachments    Attachment[]
+
+  date        DateTime?
+  latitude    String?
+  longitude   String?
+  doctorName  String?   @map("doctor_name")
+  specialty   String?
+  observation String?
+  unitName    String?   @map("unit_name")
+  address     String?
+
+  @@map("requests")
+}
+
+model Attachment {
+  id          String         @id @default(uuid())
+  request     Request        @relation(fields: [requestId], references: [id])
+  requestId   String         @map("request_id")
+  description String?
+  type        AttachmentType
+  name        String
+  url         String
+  createdAt   DateTime       @default(now()) @map("created_at")
+  folder      String
+
+  @@map("attachments")
+}
+
+model Upload {
+  id          String     @id @default(uuid())
+  user        User       @relation(fields: [userId], references: [id])
+  userId      String     @map("user_id")
+  description String?
+  type        UploadType
+  name        String
+  url         String
+  createdAt   DateTime   @default(now()) @map("created_at")
+  folder      String
+
+  @@map("uploads")
+}
+
+// npx prisma migrate dev --name nome da nova migração para adicionar nova alteração
