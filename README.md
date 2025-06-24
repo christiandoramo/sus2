@@ -22,4 +22,4 @@ https://youtu.be/9XydiAzfSZs
 
 ![alt text](<images/Captura de Tela (105).png>)
 
-* Projeto realizado em grupo para a disciplina Engenharia de Software - Projeto Agenda Saúde (CTC)
+* Projeto realizado em grupo para a disciplina Projeto de Desenvolvimento de Software - Agenda Saúde (equipe CTC)
